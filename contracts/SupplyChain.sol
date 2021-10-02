@@ -69,7 +69,7 @@ contract SupplyChain {
     //refund them after pay for item (why it is before, _ checks for logic before func)
     _;
     uint _price = items[_sku].price;
-    require(msg.value - _price < msg.value);
+    require(msg.value - _price <= msg.value);
     uint amountToRefund = msg.value - _price;
     items[_sku].buyer.transfer(amountToRefund);
   }
@@ -127,7 +127,7 @@ contract SupplyChain {
     skuCount += 1;
 
     // 3. Emit the appropriate event
-    emit LogForSale(skuCount);
+    emit LogForSale(skuCount - 1);
 
     // 4. return true
     return true;
@@ -145,9 +145,9 @@ contract SupplyChain {
   //      sure the buyer is refunded any excess ether sent. 
   // 6. call the event associated with this function!
   function buyItem(uint sku) public payable forSale(sku) paidEnough(sku) checkValue(sku) {
+    items[sku].state = State.Sold;
     items[sku].seller.transfer(items[sku].price);
     items[sku].buyer = msg.sender;
-    items[sku].state = State.Sold;
 
     emit LogSold(sku);
   }
