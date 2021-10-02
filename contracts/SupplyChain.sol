@@ -4,26 +4,43 @@ pragma solidity >=0.5.16 <0.9.0;
 contract SupplyChain {
 
   // <owner>
+  address public owner;
 
   // <skuCount>
+  uint public skuCount;
 
   // <items mapping>
+  mapping (uint => Item) private items;
 
   // <enum State: ForSale, Sold, Shipped, Received>
+  enum State { ForSale, Sold, Shipped, Received }
 
   // <struct Item: name, sku, price, state, seller, and buyer>
-  
+  struct Item {
+    string name;
+    uint sku;
+    uint price;
+    State state;
+    address payable seller;
+    address payable buyer;
+  }
+
+
   /* 
    * Events
    */
 
   // <LogForSale event: sku arg>
+  event LogForSale(uint indexed sku);
 
   // <LogSold event: sku arg>
+  event LogSold(uint indexed sku);
 
   // <LogShipped event: sku arg>
+  event LogShipped(uint indexed sku);
 
   // <LogReceived event: sku arg>
+  event LogReceived(uint indexed sku);
 
 
   /* 
@@ -33,14 +50,18 @@ contract SupplyChain {
   // Create a modifer, `isOwner` that checks if the msg.sender is the owner of the contract
 
   // <modifier: isOwner
+  modifier isOwner() {
+    require(owner == msg.sender);
+    _;
+  }
 
-  modifier verifyCaller (address _address) { 
-    // require (msg.sender == _address); 
+  modifier verifyCaller(address _address) {
+    require(msg.sender == _address);
     _;
   }
 
   modifier paidEnough(uint _price) { 
-    // require(msg.value >= _price); 
+    require(msg.value >= _price);
     _;
   }
 
@@ -67,28 +88,31 @@ contract SupplyChain {
 
   constructor() public {
     // 1. Set the owner to the transaction sender
+    owner = msg.sender;
+
     // 2. Initialize the sku count to 0. Question, is this necessary?
+    // Nope. 0 is default value for uint.
   }
 
   function addItem(string memory _name, uint _price) public returns (bool) {
     // 1. Create a new item and put in array
-    // 2. Increment the skuCount by one
-    // 3. Emit the appropriate event
-    // 4. return true
+    items[skuCount] = Item({
+      name: _name,
+      sku: skuCount,
+      price: _price,
+      state: State.ForSale,
+      seller: msg.sender,
+      buyer: address(0)
+    });
 
-    // hint:
-    // items[skuCount] = Item({
-    //  name: _name, 
-    //  sku: skuCount, 
-    //  price: _price, 
-    //  state: State.ForSale, 
-    //  seller: msg.sender, 
-    //  buyer: address(0)
-    //});
-    //
-    //skuCount = skuCount + 1;
-    // emit LogForSale(skuCount);
-    // return true;
+    // 2. Increment the skuCount by one
+    skuCount += 1;
+
+    // 3. Emit the appropriate event
+    emit LogForSale(skuCount);
+
+    // 4. return true
+    return true;
   }
 
   // Implement this buyItem function. 
@@ -119,15 +143,15 @@ contract SupplyChain {
   function receiveItem(uint sku) public {}
 
   // Uncomment the following code block. it is needed to run tests
-  /* function fetchItem(uint _sku) public view */ 
-  /*   returns (string memory name, uint sku, uint price, uint state, address seller, address buyer) */ 
-  /* { */
-  /*   name = items[_sku].name; */
-  /*   sku = items[_sku].sku; */
-  /*   price = items[_sku].price; */
-  /*   state = uint(items[_sku].state); */
-  /*   seller = items[_sku].seller; */
-  /*   buyer = items[_sku].buyer; */
-  /*   return (name, sku, price, state, seller, buyer); */
-  /* } */
+  function fetchItem(uint _sku) public view
+    returns (string memory name, uint sku, uint price, uint state, address seller, address buyer)
+  {
+    name = items[_sku].name;
+    sku = items[_sku].sku;
+    price = items[_sku].price;
+    state = uint(items[_sku].state);
+    seller = items[_sku].seller;
+    buyer = items[_sku].buyer;
+    return (name, sku, price, state, seller, buyer);
+  }
 }
